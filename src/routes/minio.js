@@ -6,6 +6,7 @@ const { MinioClient } = require('../config/minio');
 const bucket = process.env.MINIO_BUCKET;
 const foldertxt = "Txt-files";
 const folderpng = "Png-files";
+const folderjson = "Json-files";
 
 router.post('/upload-txt', upload.single('file'), async (req, res) => {
     try {
@@ -50,5 +51,28 @@ router.post('/upload-png', upload.single('file'), async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+router.post('/upload-json', upload.single('file'), async (req, res) => {
+    try {
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ message: "Требуется файл .json" });
+        }
+
+        if (!file.originalname.endsWith(".json")) {
+            return res.status(400).json({ message: "Разрешены только .json файлы" });
+        }
+
+        const objectName = `${folderjson}/${file.originalname}`;
+
+        await MinioClient.putObject(bucket, objectName, file.buffer);
+
+        res.json({ message: "Файл .json успешно загружен в папку Json-files", filename: file.originalname });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 module.exports = router;
